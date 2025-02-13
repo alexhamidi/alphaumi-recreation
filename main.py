@@ -216,6 +216,28 @@ def summarizer(state: State) -> State:
 
     return state
 
+def critic(state: State) -> State:
+    """Summarizes the execution trajectory."""
+
+    execution_trajectory_str = get_execution_trajectory_str(state["execution_trajectory"])
+
+
+    query = prompt_dict["critic"] \
+            .replace("{history}", execution_trajectory_str)
+
+    messages = [HumanMessage(content=query)]
+
+    try:
+        response: CriticResponse = llm.with_structured_output(CriticResponse).invoke(messages)
+    except Exception as e:
+        print(f"Error invoking LLM for CriticResponse: {e}")
+        return state
+
+    state["execution_trajectory"].append(Event(source="critic", value=response.criticism).model_dump())
+    state["criticism"] = response.criticism
+
+    return state
+
 #==================================================#
 # CONDITIONAL CHECK
 #==================================================#
